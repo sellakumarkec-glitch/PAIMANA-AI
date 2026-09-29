@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Intelligence Assistant | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Project Intelligence Assistant</h2>
+    <p class="section-sub">Ask questions in plain language. Every answer is grounded in the live scored portfolio and returns the exact project rows it was computed from, so nothing is asserted without evidence.</p>
+
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:start" class="chart-grid">
+      <div class="panel">
+        <div class="panel-head"><span>Conversation</span><span class="asof">Retrieval-grounded · no free generation</span></div>
+        <div class="panel-body">
+          <div class="chat" id="chat"></div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <input type="text" id="q" placeholder="e.g. Which Railways projects are most at risk?" style="flex:1">
+            <button class="btn-pill btn-navy" id="send" style="padding:12px 26px">Ask</button>
+          </div>
+          <div class="chips" id="chips"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Evidence used</div>
+        <div class="panel-body" id="ev">
+          <div class="note">The projects behind each answer will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:24px">
+      <b>How this works.</b> The assistant resolves the question to a cohort (ministry, sector or state) and an intent
+      (risk, cost, schedule, land, clearances, drivers), computes the answer directly from the scored portfolio, and
+      renders the supporting rows. Because the numbers are computed rather than generated, the assistant cannot
+      hallucinate a figure. To add free-form phrasing on top of this grounded context, point
+      <code>PAIMANA_LLM_ENDPOINT</code> at a local open-source model — see <code>docs/LLM_ASSISTANT.md</code>.
+    </div>
+  </div>
+</section>
+
+<script src="js/common.js?v=20260924-8"></script>
+<script src="js/offline.js"></script>
+<script>
+chrome('Assistant');
+
+const SUGGEST = [
+  'Give me an overview of the portfolio',
+  'Which projects are riskiest?',
+  'How bad are delays in Ministry of Railways?',
+  'Cost overrun position for Ministry of Road Transport & Highways',
+  'Which projects are stuck on land acquisition?',
+  'What drives cost escalation?',
+  'How does Uttar Pradesh compare?',
+  'Which projects have pending clearances?',
+];
+
+document.getElementById('chips').innerHTML =
+  SUGGEST.map(s=>`<button data-q="${esc(s)}">${esc(s)}</button>`).join('');
+document.querySelectorAll('#chips button').forEach(b=> b.onclick = ()=> ask(b.dataset.q));
+document.getElementById('send').onclick = ()=> ask(document.getElementById('q').value);
+document.getElementById('q').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(e.target.value); });
+
+push('bot', 'Namaste. I have the April 2026 PAIMANA portfolio loaded — 1,981 ongoing projects across 17 Ministries and 22 sectors, each scored by the predictive models. What would you like to know?');
+
+function push(who, text){
+  const c = document.getElementById('chat');
+  c.insertAdjacentHTML('beforeend', `<div class="msg ${who}">${esc(text)}</div>`);
+  c.scrollTop = c.scrollHeight;
+}
+
+async function ask(q){
+  q = (q||'').trim(); if(!q) return;
+  document.getElementById('q').value = '';
+  push('user', q);
+  const c = document.getElementById('chat');
+  c.insertAdjacentHTML('beforeend', '<div class="msg bot" id="think"><span class="spinner"></span> Querying the portfolio…</div>');
+  c.scrollTop = c.scrollHeight;
+
+  const r = await api('/api/assistant', {method:'POST', headers:{'Content-Type':'application/json'},
+                                          body: JSON.stringify({question:q})});
+  document.getElementById('think').remove();
+  push('bot', r.answer);
+
+  document.getElementById('ev').innerHTML = `
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Scope: <b>${esc(r.scope)}</b> · ${r.evidence.length} rows</div>
+    <div class="tbl-scroll"><table class="data" style="min-width:0;font-size:12.6px">
+      <thead><tr><th>Project</th><th class="num">Risk</th><th class="num">Cost ↑</th><th class="num">Delay</th></tr></thead>
+      <tbody>${r.evidence.map(e=>`<tr>
+        <td><a href="project.html?id=${e.project_id}">${esc((e.project_name||'').slice(0,58))}</a>
+          <div style="font-size:11px;color:#7a8499">${e.project_id}</div></td>
+        <td class="num"><span class="badge b-${e.risk_band}">${Number(e.risk_score).toFixed(0)}</span></td>
+        <td class="num">${Number(e.pred_cost_overrun_pct).toFixed(1)}%</td>
+        <td class="num">${Number(e.pred_time_overrun_months).toFixed(1)} mo</td></tr>`).join('')}</tbody>
+    </table></div>`;
+}
+</script>
+</body>
+</html>

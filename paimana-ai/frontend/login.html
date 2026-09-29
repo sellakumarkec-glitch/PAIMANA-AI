@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+<style>
+  :root { --login-blue:#123d7b; --login-cyan:#139bd0; }
+  body { min-height:100vh; background:var(--login-blue); }
+  .login-shell { min-height:100vh; display:grid; grid-template-columns:1.35fr .9fr; align-items:center; gap:8vw; padding:34px 5vw; background:linear-gradient(115deg,#123d7b 0%,#123d7b 55%,#0f356b 100%); }
+  .login-intro { color:#fff; max-width:680px; }
+  .login-intro h1 { margin:0 0 20px; color:#fff; font-size:clamp(42px,5.4vw,72px); line-height:1.08; letter-spacing:0; }
+  .login-intro p { margin:0; color:#d7e6f4; font-size:18px; font-weight:600; }
+  .login-card { width:min(100%,480px); justify-self:end; background:#fff; border-radius:15px; padding:28px; box-shadow:0 20px 55px rgba(0,0,0,.2); }
+  .login-tabs { display:flex; gap:25px; border-bottom:1px solid #dce1e6; margin-bottom:24px; }
+  .login-tab { border:0; border-bottom:2px solid transparent; background:none; padding:0 3px 10px; color:#4b4f55; font:500 14px var(--font); cursor:pointer; }
+  .login-tab.active { color:var(--login-cyan); border-bottom-color:var(--login-cyan); font-weight:700; }
+  .login-field { margin-bottom:18px; }
+  .login-field label { display:block; margin-bottom:7px; color:#1e242b; font-size:13px; font-weight:500; }
+  .login-field label::after { content:'*'; color:#e04444; margin-left:3px; }
+  .login-field input, .login-field select { width:100%; min-height:40px; border:1px solid #ccd1d6; border-radius:5px; padding:9px 11px; color:#26313b; background:#fff; font:13px var(--font); }
+  .login-field input:focus, .login-field select:focus { outline:2px solid rgba(19,155,208,.25); border-color:var(--login-cyan); }
+  .login-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; }
+  .captcha-box { height:42px; display:flex; align-items:center; justify-content:center; gap:12px; border:1px solid #d5d9de; background:#f4f6f8; color:#202830; font:700 17px Georgia,serif; letter-spacing:7px; }
+  .captcha-refresh { height:42px; width:42px; border:1px solid #d5d9de; border-radius:5px; background:#fff; color:#47535e; font-size:20px; cursor:pointer; }
+  .login-submit { width:100%; min-height:43px; border:0; border-radius:5px; background:var(--login-cyan); color:#fff; font:700 13px var(--font); cursor:pointer; }
+  .login-link { display:block; margin:8px 0 17px; color:#277ea5; text-align:right; font-size:12px; }
+  .login-message { display:none; margin:0 0 15px; padding:9px 11px; border-radius:5px; background:#fff0f0; color:#b42318; font-size:12px; }
+  .guest-button { display:block; width:100%; margin-top:14px; border:1px solid #cfd8e2; border-radius:5px; background:#fff; color:#22527b; padding:10px; font:600 12px var(--font); cursor:pointer; text-align:center; text-decoration:none; }
+  .guest-button:hover { background:#f3f7fb; color:#123d7b; text-decoration:none; }
+  .register-copy { display:none; color:#5d6880; font-size:13px; line-height:1.6; }
+  .login-foot { margin-top:20px; color:#d7e6f4; font-size:12px; }
+  @media (max-width:850px) { .login-shell { grid-template-columns:1fr; gap:28px; padding:30px 20px; } .login-card { justify-self:stretch; width:100%; max-width:520px; } .login-intro { text-align:center; margin:auto; } .login-intro h1 { font-size:42px; } }
+</style>
+</head>
+<body>
+<main class="login-shell">
+  <section class="login-intro" aria-label="PAIMANA introduction">
+    <h1>Central Repository of Projects</h1>
+    <p>"Transitioning from the IIG/IPM Portal to PAIMANA"</p>
+    <p class="login-foot">Project Assessment, Infrastructure Monitoring and Analytics for Nation-building</p>
+  </section>
+
+  <section class="login-card" aria-label="Login form">
+    <div class="login-tabs" role="tablist">
+      <button class="login-tab active" id="loginTab" type="button" role="tab">Login</button>
+      <button class="login-tab" id="registerTab" type="button" role="tab">Register</button>
+    </div>
+
+    <div id="loginPanel">
+      <form id="loginForm" novalidate>
+        <div class="login-field">
+          <label for="role">Login type</label>
+          <select id="role" required>
+            <option value="mospi">MOSPI login</option>
+            <option value="reporting_manager">REPORTING MANAGER login</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="Enter username" autocomplete="username" required>
+        </div>
+        <div class="login-field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Enter password" autocomplete="current-password" required>
+        </div>
+        <a class="login-link" href="#" id="forgotPassword">Forgot Password?</a>
+        <div class="login-field">
+          <label for="captchaInput">Verification Code</label>
+          <div class="login-grid">
+            <div class="captcha-box" id="captchaCode" aria-label="Verification code"></div>
+            <button class="captcha-refresh" id="refreshCaptcha" type="button" aria-label="Refresh verification code">&#8635;</button>
+          </div>
+          <input id="captchaInput" type="text" placeholder="Enter 6 characters" maxlength="6" autocomplete="off" required style="margin-top:8px;text-transform:uppercase;">
+        </div>
+        <div class="login-message" id="loginMessage"></div>
+        <button class="login-submit" type="submit">Login</button>
+      </form>
+      <a class="guest-button" id="guestButton" href="dashboard.html">Continue as guest (dashboard only)</a>
+    </div>
+
+    <div class="register-copy" id="registerPanel">
+      Registration is managed by the PAIMANA administrator. Please use your assigned MOSPI or Reporting Manager login.
+    </div>
+  </section>
+</main>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+const CAPTCHA_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+let captcha = '';
+
+const requestedRole = new URLSearchParams(window.location.search).get('role');
+if (['mospi', 'reporting_manager'].includes(requestedRole)) {
+  document.getElementById('role').value = requestedRole;
+}
+
+function newCaptcha() {
+  captcha = Array.from({ length: 6 }, () => CAPTCHA_CHARS[Math.floor(Math.random() * CAPTCHA_CHARS.length)]).join('');
+  document.getElementById('captchaCode').textContent = captcha;
+  document.getElementById('captchaInput').value = '';
+}
+
+function showMessage(text) {
+  const box = document.getElementById('loginMessage');
+  box.textContent = text;
+  box.style.display = 'block';
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const role = document.getElementById('role').value;
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const enteredCaptcha = document.getElementById('captchaInput').value.trim().toUpperCase();
+
+  if (!username || !password) return showMessage('Enter your username and password.');
+  if (username.toLowerCase() !== ROLE_USERNAMES[role]) {
+    return showMessage('Incorrect username for the selected login type.');
+  }
+  if (enteredCaptcha !== captcha) {
+    showMessage('Verification code is incorrect.');
+    newCaptcha();
+    return;
+  }
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, role }),
+    });
+    if (!response.ok) {
+      showMessage('Incorrect username, password, or login type.');
+      return;
+    }
+  } catch (error) {
+    showMessage('The login service is unavailable. Please start the PAIMANA server.');
+    return;
+  }
+  setRole(role, username);
+  window.location.href = role === 'mospi' ? 'index.html' : 'dashboard.html';
+});
+
+document.getElementById('guestButton').addEventListener('click', () => {
+  setRole('guest');
+  window.location.href = 'dashboard.html';
+});
+document.getElementById('refreshCaptcha').addEventListener('click', newCaptcha);
+document.getElementById('forgotPassword').addEventListener('click', (event) => {
+  event.preventDefault();
+  showMessage('Please contact the PAIMANA administrator to reset your password.');
+});
+document.getElementById('registerTab').addEventListener('click', () => {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('registerPanel').style.display = 'block';
+  document.getElementById('registerTab').classList.add('active');
+  document.getElementById('loginTab').classList.remove('active');
+});
+document.getElementById('loginTab').addEventListener('click', () => {
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('registerPanel').style.display = 'none';
+  document.getElementById('loginTab').classList.add('active');
+  document.getElementById('registerTab').classList.remove('active');
+});
+newCaptcha();
+</script>
+</body>
+</html>

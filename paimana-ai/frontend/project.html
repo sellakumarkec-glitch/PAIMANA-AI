@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Detail | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+<section class="section"><div class="wrap" id="root"><span class="spinner"></span> Loading project…</div></section>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome(''); chartDefaults();
+const ID = new URLSearchParams(location.search).get('id');
+
+(async function(){
+  if(!ID){ document.getElementById('root').innerHTML =
+    '<div class="note">No project selected. Open a project from the <a href="dashboard.html">risk register</a>.</div>'; return; }
+  let p;
+  try { p = await api('/api/project/'+ID); }
+  catch(e){ document.getElementById('root').innerHTML =
+    `<div class="note">Project <b>${esc(ID)}</b> was not found in the scored portfolio.</div>`; return; }
+  render(p);
+})();
+
+function row(l,v){ return `<tr><td style="color:var(--muted);width:46%">${l}</td><td><b>${v}</b></td></tr>`; }
+
+function render(p){
+  const userRole = getRole();
+  const canSubmitProgress = ['reporting_manager', 'mospi'].includes(userRole);
+  const gap = (p.physical_progress_pct - p.elapsed_schedule_pct).toFixed(1);
+  document.getElementById('root').innerHTML = `
+  <div style="margin-bottom:8px"><a href="dashboard.html">← Risk register</a></div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0 0 4px;color:var(--navy);font-size:26px">${esc(p.project_name)}</h2>
+      <p style="margin:0 0 22px;color:var(--muted)">${p.project_id} · ${esc(p.ministry)} · ${esc(p.sector)} · ${esc(p.state)}
+         · <span class="badge b-${p.risk_band}">${p.risk_band} risk — ${p.risk_score}/100</span>
+         · National rank ${p.risk_rank ?? '—'}</p>
+    </div>
+    <div style="padding:8px 12px;border-radius:999px;background:#edf2ff;color:var(--navy);font-weight:600;font-size:12px;white-space:nowrap;">
+      ${userRole === 'mospi' ? 'MOSPI access' : userRole === 'reporting_manager' ? 'Reporting Manager access' : 'Guest access'}
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:24px">
+    <div class="kpi"><div class="k-label">Sanctioned cost</div><div class="k-value" style="font-size:24px">${fmt.n(p.original_cost_cr)}<span class="k-unit">₹ cr</span></div></div>
+    <div class="kpi amber"><div class="k-label">Revised cost</div><div class="k-value" style="font-size:24px">${fmt.n(p.revised_cost_cr)}<span class="k-unit">₹ cr</span></div>
+      <div class="k-note">${p.cost_overrun_pct}% booked overrun</div></div>
+    <div class="kpi green"><div class="k-label">Expenditure</div><div class="k-value" style="font-size:24px">${fmt.n(p.expenditure_cr)}<span class="k-unit">₹ cr</span></div>
+      <div class="k-note">${p.financial_progress_pct}% of revised cost</div></div>
+    <div class="kpi ${p.pred_cost_overrun_pct>20?'red':''}"><div class="k-label">Forecast cost overrun</div>
+      <div class="k-value" style="font-size:24px">${p.pred_cost_overrun_pct.toFixed(1)}<span class="k-unit">%</span></div>
+      <div class="k-note">≈ ${fmt.cr(p.original_cost_cr*p.pred_cost_overrun_pct/100)} escalation</div></div>
+    <div class="kpi ${p.pred_time_overrun_months>12?'red':''}"><div class="k-label">Forecast slippage</div>
+      <div class="k-value" style="font-size:24px">${p.pred_time_overrun_months.toFixed(1)}<span class="k-unit">months</span></div>
+      <div class="k-note">Status: ${esc(p.project_status)}</div></div>
+    <div class="kpi ${gap<0?'red':'green'}"><div class="k-label">Progress vs schedule</div>
+      <div class="k-value" style="font-size:24px">${gap>0?'+':''}${gap}<span class="k-unit">pp</span></div>
+      <div class="k-note">${p.physical_progress_pct}% built · ${p.elapsed_schedule_pct}% time elapsed</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start" class="chart-grid">
+    <div class="panel"><div class="panel-head">Why this project is flagged</div>
+      <div class="panel-body">
+        <canvas id="cDrv" style="max-height:250px"></canvas>
+        <table class="data" style="min-width:0;margin-top:16px">
+          <thead><tr><th>Factor</th><th class="num">Points</th><th>Evidence</th></tr></thead>
+          <tbody>${p.drivers.map(d=>`<tr><td>${esc(d.factor)}</td>
+            <td class="num">${d.contribution}</td><td style="font-size:12.6px">${esc(d.detail)}</td></tr>`).join('')}</tbody>
+        </table>
+        <p style="font-size:12.4px;color:var(--muted);margin:12px 0 0">Points sum to the 0–100 composite risk score. The two forecast components come from the LightGBM models; the rest are live CUF telemetry.</p>
+      </div></div>
+
+    <div class="panel"><div class="panel-head">Active early warning signals</div>
+      <div class="panel-body">
+        ${p.alert_list.length ? p.alert_list.map(s=>`<span class="signal">${esc(s)}</span>`).join('')
+          : '<div class="note">No active early warning signal for this project.</div>'}
+        <div class="rec" style="margin-top:16px"><b>Peer benchmark (${esc(p.peer_benchmark.sector)}):</b>
+          this project sits at the <b>${p.peer_benchmark.percentile_risk}th percentile</b> of risk among
+          ${p.peer_benchmark.peer_count} sector peers. Sector median forecast overrun is
+          ${p.peer_benchmark.peer_median_cost_overrun}% and median slippage ${p.peer_benchmark.peer_median_time_overrun} months.</div>
+        <canvas id="cPeer" style="max-height:220px;margin-top:18px"></canvas>
+      </div></div>
+  </div>
+
+  <div class="panel" style="margin-top:22px"><div class="panel-head">Common Upload Form record</div>
+    <div class="panel-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:26px">
+      <table class="data" style="min-width:0"><tbody>
+        ${row('Date of sanction', p.date_of_sanction)}
+        ${row('Original completion', p.original_completion)}
+        ${row('Anticipated completion', p.anticipated_completion)}
+        ${row('Original duration', p.original_duration_m + ' months')}
+        ${row('Implementing agency type', esc(p.agency_type))}
+        ${row('Funding mode', esc(p.funding_mode))}
+        ${row('Contract type', esc(p.contract_type))}
+        ${row('Packages', p.num_packages)}
+      </tbody></table>
+      <table class="data" style="min-width:0"><tbody>
+        ${row('Land acquired', p.land_acquired_pct + '%')}
+        ${row('Forest clearance', esc(p.forest_clearance))}
+        ${row('Environment clearance', esc(p.env_clearance))}
+        ${row('Award lag after sanction', p.award_lag_months + ' months')}
+        ${row('Cost revisions approved', p.num_cost_revisions)}
+        ${row('Monitoring frequency', esc(p.monitoring_frequency))}
+        ${row('Reported reason for delay', esc(p.reason_for_delay))}
+        ${row('Risk class (model)', `<span class="badge b-${p.risk_class}">${p.risk_class}</span>`)}
+      </tbody></table>
+    </div></div>
+
+  <div class="panel" style="margin-top:22px"><div class="panel-head">External signals not captured in the CUF</div>
+    <div class="panel-body">
+      <p style="margin-top:0;font-size:13.6px;color:var(--muted)">These seven variables sit outside the current Common Upload Form. The ablation study quantifies how much predictive power they add — see <a href="model.html#ablation">Model Performance</a>.</p>
+      <div class="kpi-grid">
+        ${[['Monsoon stoppage days', p.ext_monsoon_stoppage_days, 'days/yr'],
+           ['Steel price index at award', p.ext_steel_price_index, ''],
+           ['Cement price index at award', p.ext_cement_price_index, ''],
+           ['Land litigation cases', p.ext_litigation_cases, ''],
+           ['Contractor financial stress', p.ext_contractor_stress, '/100'],
+           ['Right-of-way available', p.ext_row_availability_pct, '%'],
+           ['Local agitation days', p.ext_local_unrest_days, 'days']]
+          .map(([l,v,u])=>`<div class="kpi"><div class="k-label">${l}</div>
+            <div class="k-value" style="font-size:21px">${v}<span class="k-unit">${u}</span></div></div>`).join('')}
+      </div></div></div>`;
+
+  if (canSubmitProgress) {
+    const formPanel = document.createElement('div');
+    formPanel.className = 'panel';
+    formPanel.style.marginTop = '22px';
+    formPanel.innerHTML = `
+      <div class="panel-head">Progress report entry</div>
+      <div class="panel-body">
+        <form id="progressReportForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end;">
+          <div class="field"><label for="reportMonth">Month</label><input id="reportMonth" type="month" required></div>
+          <div class="field"><label for="physicalProgress">Physical progress (%)</label><input id="physicalProgress" type="number" min="0" max="100" step="0.1" required></div>
+          <div class="field"><label for="financialProgress">Financial progress (%)</label><input id="financialProgress" type="number" min="0" max="100" step="0.1" required></div>
+          <div class="field" style="grid-column:1 / -1;"><label for="reportNotes">Progress notes</label><textarea id="reportNotes" rows="3" placeholder="Describe delays, corrective action, or milestones achieved"></textarea></div>
+          <div style="grid-column:1 / -1; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <small style="color:var(--muted)">This is a front-end-only submission for the selected project and role.</small>
+            <button type="submit" class="btn-pill btn-navy" style="padding:10px 18px">Save progress report</button>
+          </div>
+        </form>
+        <div id="progressReportStatus" style="margin-top:14px; display:none; padding:10px 12px; border-radius:10px; background:#eefaf3; color:#14532d; font-size:13px; font-weight:600;"></div>
+      </div>
+    `;
+    document.getElementById('root').appendChild(formPanel);
+
+    document.getElementById('progressReportForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const month = document.getElementById('reportMonth').value;
+      const physical = document.getElementById('physicalProgress').value;
+      const financial = document.getElementById('financialProgress').value;
+      const notes = document.getElementById('reportNotes').value.trim();
+      const payload = {
+        project_id: p.project_id,
+        project_name: p.project_name,
+        submitted_by: getUsername() || (userRole === 'mospi' ? 'MOSPI' : 'REPORTING MANAGER'),
+        role: userRole,
+        month,
+        physical_progress_pct: Number(physical),
+        financial_progress_pct: Number(financial),
+        notes,
+      };
+
+      const status = document.getElementById('progressReportStatus');
+      try {
+        const response = await fetch('/api/progress-reports', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Report was not accepted');
+        status.textContent = `Progress report saved to the database for ${p.project_name} (${month}).`;
+        status.style.display = 'block';
+        event.target.reset();
+      } catch (error) {
+        status.textContent = 'The report could not be saved. Check that the PAIMANA server is running.';
+        status.style.display = 'block';
+        status.style.background = '#fff0f0';
+        status.style.color = '#b42318';
+      }
+    });
+  }
+
+  new Chart(document.getElementById('cDrv'),{type:'bar',
+    data:{labels:p.drivers.map(d=>d.factor),datasets:[{data:p.drivers.map(d=>d.contribution),
+      backgroundColor:'#133a9e',borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},
+      scales:{x:{title:{display:true,text:'Contribution to risk score'}}}}});
+
+  new Chart(document.getElementById('cPeer'),{type:'bar',
+    data:{labels:['Forecast cost overrun (%)','Forecast slippage (months)','Risk score'],
+      datasets:[
+        {label:'This project',data:[p.pred_cost_overrun_pct,p.pred_time_overrun_months,p.risk_score],backgroundColor:'#c62828',borderRadius:4},
+        {label:'Sector median',data:[p.peer_benchmark.peer_median_cost_overrun,
+          p.peer_benchmark.peer_median_time_overrun,p.peer_benchmark.peer_median_risk_score],
+          backgroundColor:'#2f7fd4',borderRadius:4}]},
+    options:{plugins:{legend:{position:'bottom'}}}});
+}
+</script>
+</body>
+</html>

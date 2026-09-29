@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAIMANA – Infrastructure &amp; Project Monitoring | MoSPI, Government of India</title>
+<meta name="description" content="AI-powered predictive analytics and early warning system for Central Sector infrastructure projects monitored on PAIMANA.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+<div class="hero" id="hero"></div>
+
+<!-- ============ KPI strip ============ -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Ongoing Central Sector Infrastructure Projects</h2>
+    <p class="section-sub">Projects costing ₹150 crore and above, monitored by the Infrastructure &amp; Project Monitoring Division, MoSPI. Figures as of April 2026.</p>
+    <div class="kpi-grid" id="kpis"></div>
+  </div>
+</section>
+
+<!-- ============ Ministry / Sector tabs ============ -->
+<section class="section soft">
+  <div class="wrap">
+    <div style="display:flex;justify-content:center;margin-bottom:24px"><div class="tabs" id="tabs">
+      <button class="on" data-by="ministry">Ministry-Wise</button>
+      <button data-by="sector">Sector-Wise</button>
+    </div></div>
+
+    <div style="display:grid;grid-template-columns:270px 1fr;gap:26px;align-items:start" id="split">
+      <div class="rail" id="rail"></div>
+      <div class="panel">
+        <div class="panel-head"><span id="panelTitle">—</span><span class="asof">(as of April, 2026)</span></div>
+        <div class="panel-body">
+          <div class="kpi-grid" id="entityKpis" style="margin-bottom:20px"></div>
+          <div class="tbl-scroll"><table class="data" id="entityTable"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI layer ============ -->
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Predictive Analytics &amp; Early Warning</h2>
+    <p class="section-sub">Every monitored project is scored by gradient-boosted models trained on nearly two decades of OCMS project histories. The portfolio below is ranked by forecast risk, not by past reporting.</p>
+    <div class="chart-grid">
+      <div class="chart-box"><h3>Portfolio risk distribution</h3><p class="hint">Composite 0–100 risk score, banded</p><canvas id="cRisk"></canvas></div>
+      <div class="chart-box"><h3>Forecast cost escalation by sector</h3><p class="hint">Median predicted overrun over sanctioned cost</p><canvas id="cSector"></canvas></div>
+      <div class="chart-box"><h3>Sanctioned vs revised vs spent</h3><p class="hint">₹ lakh crore, whole portfolio</p><canvas id="cMoney"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Top alerts ============ -->
+<section class="section soft">
+  <div class="wrap">
+    <div class="panel">
+      <div class="panel-head"><span>Highest-priority early warning signals</span>
+        <a href="early-warning.html" style="color:#e9a63c;font-size:14px;font-weight:600">View all alerts →</a></div>
+      <div class="panel-body" id="topAlerts"><span class="spinner"></span></div>
+    </div>
+  </div>
+</section>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome('Home');
+hero(document.getElementById('hero'));
+chartDefaults();
+
+let BY = 'ministry', ROWS = [], KPI = null;
+
+(async function init(){
+  KPI = await api('/api/kpis');
+  renderKpis(KPI);
+  await loadBreakdown('ministry');
+  drawCharts();
+  loadAlerts();
+})();
+
+function renderKpis(k){
+  const cards = [
+    ['Ongoing projects', fmt.n(k.total_projects), '', `${k.ministries} Ministries · ${k.sectors} sectors`, ''],
+    ['Original cost', k.original_cost_lakh_cr, '₹ lakh cr', 'Total sanctioned outlay', ''],
+    ['Revised cost', k.revised_cost_lakh_cr, '₹ lakh cr', `${k.aggregate_cost_overrun_pct}% above sanctioned`, 'amber'],
+    ['Expenditure', k.expenditure_lakh_cr, '₹ lakh cr', `${k.expenditure_ratio_pct}% of revised cost`, 'green'],
+    ['Delayed projects', fmt.n(k.delayed_projects), '', `${k.delayed_pct}% · avg ${k.avg_time_overrun_months} months slippage`, 'amber'],
+    ['High &amp; Critical risk', fmt.n((k.risk_bands.High||0)+(k.risk_bands.Critical||0)), '', `Value at risk ${fmt.lakh(k.value_at_risk_lakh_cr)}`, 'red'],
+  ];
+  document.getElementById('kpis').innerHTML = cards.map(([l,v,u,n,c])=>`
+    <div class="kpi ${c}"><div class="k-label">${l}</div>
+      <div class="k-value">${v}<span class="k-unit">${u}</span></div>
+      <div class="k-note">${n}</div></div>`).join('');
+}
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on', x===b));
+  loadBreakdown(b.dataset.by);
+});
+
+async function loadBreakdown(by){
+  BY = by;
+  ROWS = await api('/api/breakdown?by='+by);
+  document.getElementById('rail').innerHTML = ROWS.map((r,i)=>
+    `<button class="${i===0?'on':''}" data-k="${esc(r[by])}">${esc(r[by])}<span class="chev">›</span></button>`).join('');
+  document.querySelectorAll('#rail button').forEach(b=> b.onclick = ()=>{
+    document.querySelectorAll('#rail button').forEach(x=>x.classList.toggle('on', x===b));
+    showEntity(b.dataset.k);
+  });
+  showEntity(ROWS[0][by]);
+}
+
+async function showEntity(key){
+  const r = ROWS.find(x=>x[BY]===key); if(!r) return;
+  document.getElementById('panelTitle').textContent = key;
+  document.getElementById('entityKpis').innerHTML = [
+    ['Projects', fmt.n(r.projects), ''],
+    ['Original cost', fmt.n(r.original_cost_cr), '₹ cr'],
+    ['Revised cost', fmt.n(r.revised_cost_cr), '₹ cr'],
+    ['Cost overrun', r.cost_overrun_pct+'%', ''],
+    ['Expenditure', fmt.n(r.expenditure_cr), '₹ cr'],
+    ['Delayed', r.delayed+' ('+r.delayed_pct+'%)', ''],
+    ['Mean AI risk score', r.avg_risk_score, '/100'],
+    ['Critical risk', fmt.n(r.critical), ''],
+  ].map(([l,v,u])=>`<div class="kpi"><div class="k-label">${l}</div>
+      <div class="k-value" style="font-size:22px">${v}<span class="k-unit">${u}</span></div></div>`).join('');
+
+  const d = await api(`/api/projects?${BY}=${encodeURIComponent(key)}&size=10&sort=risk_score`);
+  document.getElementById('entityTable').innerHTML = `
+    <thead><tr><th>Project</th><th>State</th><th class="num">Sanctioned (₹ cr)</th>
+      <th class="num">Physical %</th><th class="num">Forecast cost ↑</th><th class="num">Forecast delay</th>
+      <th>Risk</th></tr></thead>
+    <tbody>${d.rows.map(p=>`<tr>
+      <td><a href="project.html?id=${p.project_id}">${esc(p.project_name)}</a>
+          <div style="font-size:11.5px;color:#7a8499">${p.project_id} · ${esc(p.sector)}</div></td>
+      <td>${esc(p.state)}</td>
+      <td class="num">${fmt.n(p.original_cost_cr)}</td>
+      <td class="num">${p.physical_progress_pct}<div class="bar"><i style="width:${p.physical_progress_pct}%"></i></div></td>
+      <td class="num">${p.pred_cost_overrun_pct.toFixed(1)}%</td>
+      <td class="num">${p.pred_time_overrun_months.toFixed(1)} mo</td>
+      <td><span class="badge b-${p.risk_band}">${p.risk_band} ${p.risk_score.toFixed(0)}</span></td></tr>`).join('')}
+    </tbody>`;
+}
+
+async function drawCharts(){
+  const k = KPI;
+  new Chart(document.getElementById('cRisk'), {type:'doughnut',
+    data:{labels:Object.keys(k.risk_bands), datasets:[{data:Object.values(k.risk_bands),
+      backgroundColor:Object.keys(k.risk_bands).map(b=>RISKCOLOR[b]), borderWidth:2, borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom'}},cutout:'58%'}});
+
+  const bm = await api('/api/benchmark?dimension=sector');
+  const top = bm.rows.slice(0,10);
+  new Chart(document.getElementById('cSector'), {type:'bar',
+    data:{labels:top.map(r=>r.sector), datasets:[{label:'Median forecast cost overrun (%)',
+      data:top.map(r=>r.median_cost_overrun), backgroundColor:'#133a9e', borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'%'}}}}});
+
+  new Chart(document.getElementById('cMoney'), {type:'bar',
+    data:{labels:['Original cost','Revised cost','Expenditure'],
+      datasets:[{data:[k.original_cost_lakh_cr,k.revised_cost_lakh_cr,k.expenditure_lakh_cr],
+        backgroundColor:['#2f7fd4','#e9a63c','#1f9d55'],borderRadius:5}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'₹ lakh crore'}}}}});
+}
+
+async function loadAlerts(){
+  const a = await api('/api/alerts?limit=4');
+  document.getElementById('topAlerts').innerHTML = a.alerts.map(x=>`
+    <div class="alert-card ${x.risk_band}">
+      <h4><a href="project.html?id=${x.project_id}">${esc(x.project_name)}</a></h4>
+      <div class="alert-meta">${x.project_id} · ${esc(x.ministry)} · ${esc(x.state)} ·
+        <span class="badge b-${x.risk_band}">${x.risk_band} ${x.risk_score.toFixed(0)}</span> ·
+        Revised cost ${fmt.cr(x.revised_cost_cr)}</div>
+      ${x.signals.slice(0,3).map(s=>`<span class="signal">${esc(s)}</span>`).join('')}
+      <div class="rec"><b>Recommended action:</b> ${esc(x.recommended_action)}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>

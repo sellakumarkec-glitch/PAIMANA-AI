@@ -1,0 +1,171 @@
+{
+  "trained_at": "2026-09-29T14:40:22",
+  "train_rows": 7200,
+  "test_rows": 1800,
+  "split": "temporal (by date_of_sanction)",
+  "results": [
+    {
+      "model": "OLS",
+      "MAE": 8.132,
+      "RMSE": 11.26,
+      "R2": 0.401,
+      "target": "cost_overrun_pct",
+      "featureset": "cuf"
+    },
+    {
+      "model": "RIDGE",
+      "MAE": 8.13,
+      "RMSE": 11.258,
+      "R2": 0.4012,
+      "target": "cost_overrun_pct",
+      "featureset": "cuf"
+    },
+    {
+      "model": "LightGBM",
+      "MAE": 7.647,
+      "RMSE": 10.918,
+      "R2": 0.4368,
+      "target": "cost_overrun_pct",
+      "featureset": "cuf",
+      "fit_seconds": 2.41,
+      "best_iter": 130
+    },
+    {
+      "model": "OLS",
+      "MAE": 6.033,
+      "RMSE": 9.708,
+      "R2": 0.6684,
+      "target": "time_overrun_months",
+      "featureset": "cuf"
+    },
+    {
+      "model": "RIDGE",
+      "MAE": 6.028,
+      "RMSE": 9.705,
+      "R2": 0.6686,
+      "target": "time_overrun_months",
+      "featureset": "cuf"
+    },
+    {
+      "model": "LightGBM",
+      "MAE": 3.359,
+      "RMSE": 7.57,
+      "R2": 0.7984,
+      "target": "time_overrun_months",
+      "featureset": "cuf",
+      "fit_seconds": 2.65,
+      "best_iter": 191
+    },
+    {
+      "model": "Multinomial Logit",
+      "target": "risk_class",
+      "featureset": "cuf",
+      "accuracy": 0.62,
+      "macro_f1": 0.639
+    },
+    {
+      "model": "LightGBM",
+      "target": "risk_class",
+      "featureset": "cuf",
+      "accuracy": 0.6378,
+      "macro_f1": 0.6594,
+      "roc_auc_ovr": 0.8782
+    },
+    {
+      "model": "OLS",
+      "MAE": 7.763,
+      "RMSE": 11.024,
+      "R2": 0.4259,
+      "target": "cost_overrun_pct",
+      "featureset": "extended"
+    },
+    {
+      "model": "RIDGE",
+      "MAE": 7.762,
+      "RMSE": 11.022,
+      "R2": 0.426,
+      "target": "cost_overrun_pct",
+      "featureset": "extended"
+    },
+    {
+      "model": "LightGBM",
+      "MAE": 7.217,
+      "RMSE": 10.651,
+      "R2": 0.4641,
+      "target": "cost_overrun_pct",
+      "featureset": "extended",
+      "fit_seconds": 3.15,
+      "best_iter": 220
+    },
+    {
+      "model": "OLS",
+      "MAE": 6.061,
+      "RMSE": 9.694,
+      "R2": 0.6694,
+      "target": "time_overrun_months",
+      "featureset": "extended"
+    },
+    {
+      "model": "RIDGE",
+      "MAE": 6.058,
+      "RMSE": 9.691,
+      "R2": 0.6696,
+      "target": "time_overrun_months",
+      "featureset": "extended"
+    },
+    {
+      "model": "LightGBM",
+      "MAE": 3.363,
+      "RMSE": 7.623,
+      "R2": 0.7955,
+      "target": "time_overrun_months",
+      "featureset": "extended",
+      "fit_seconds": 2.88,
+      "best_iter": 137
+    },
+    {
+      "model": "Multinomial Logit",
+      "target": "risk_class",
+      "featureset": "extended",
+      "accuracy": 0.645,
+      "macro_f1": 0.6628
+    },
+    {
+      "model": "LightGBM",
+      "target": "risk_class",
+      "featureset": "extended",
+      "accuracy": 0.65,
+      "macro_f1": 0.6715,
+      "roc_auc_ovr": 0.8882
+    }
+  ],
+  "ablation": [
+    {
+      "target": "cost_overrun_pct",
+      "cuf_MAE": 7.647,
+      "extended_MAE": 7.217,
+      "cuf_R2": 0.4368,
+      "extended_R2": 0.4641,
+      "MAE_reduction_pct": 5.62,
+      "R2_gain": 0.0273
+    },
+    {
+      "target": "time_overrun_months",
+      "cuf_MAE": 3.359,
+      "extended_MAE": 3.363,
+      "cuf_R2": 0.7984,
+      "extended_R2": 0.7955,
+      "MAE_reduction_pct": -0.12,
+      "R2_gain": -0.0029
+    },
+    {
+      "target": "risk_class",
+      "cuf_MAE": null,
+      "extended_MAE": null,
+      "cuf_R2": 0.6594,
+      "extended_R2": 0.6715,
+      "MAE_reduction_pct": null,
+      "R2_gain": 0.0121
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Early Warning Alerts | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Early Warning Alert System</h2>
+    <p class="section-sub">Alerts fire from live Common Upload Form telemetry combined with model forecasts. Each alert carries the evidence that triggered it and a prescriptive next step for the monitoring officer.</p>
+
+    <div class="panel" style="margin-bottom:22px">
+      <div class="panel-head"><span>Alert queue</span><span class="asof" id="count"></span></div>
+      <div class="panel-body">
+        <div class="filters">
+          <div class="field"><label for="fSev">Severity</label>
+            <select id="fSev"><option value="">All severities</option>
+              <option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+          <div class="field"><label for="fMin">Ministry / Department</label><select id="fMin"></select></div>
+          <div class="field"><label for="fLimit">Show</label>
+            <select id="fLimit"><option>25</option><option selected>50</option><option>100</option><option>250</option></select></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" style="margin-bottom:24px" id="sev"></div>
+    <div id="feed"><span class="spinner"></span> Loading alerts…</div>
+  </div>
+</section>
+
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome('Dashboard');
+
+(async function(){
+  const f = await api('/api/filters');
+  document.getElementById('fMin').innerHTML = '<option value="">All ministries</option>' +
+    f.ministry.map(v=>`<option>${esc(v)}</option>`).join('');
+  ['fSev','fMin','fLimit'].forEach(id=>document.getElementById(id).onchange = load);
+  load();
+})();
+
+async function load(){
+  const sev = document.getElementById('fSev').value;
+  const min = document.getElementById('fMin').value;
+  const lim = document.getElementById('fLimit').value;
+  document.getElementById('feed').innerHTML = '<span class="spinner"></span> Loading alerts…';
+  const p = new URLSearchParams({limit:lim});
+  if(sev) p.set('severity',sev); if(min) p.set('ministry',min);
+  const a = await api('/api/alerts?'+p);
+  const all = await api('/api/alerts?limit=3000');
+
+  const counts = {Critical:0,High:0,Medium:0,Low:0};
+  all.alerts.forEach(x=>counts[x.risk_band]++);
+  document.getElementById('sev').innerHTML = Object.entries(counts).map(([k,v])=>
+    `<div class="kpi" style="border-top-color:${RISKCOLOR[k]}">
+      <div class="k-label">${k} severity</div><div class="k-value">${fmt.n(v)}</div>
+      <div class="k-note">projects with at least one active signal</div></div>`).join('');
+
+  document.getElementById('count').textContent = `${fmt.n(a.count)} alerts shown of ${fmt.n(all.count)} active`;
+  document.getElementById('feed').innerHTML = a.alerts.map(x=>`
+    <div class="alert-card ${x.risk_band}">
+      <h4><a href="project.html?id=${x.project_id}">${esc(x.project_name)}</a></h4>
+      <div class="alert-meta">${x.project_id} · ${esc(x.ministry)} · ${esc(x.sector)} · ${esc(x.state)} ·
+        <span class="badge b-${x.risk_band}">${x.risk_band} ${x.risk_score.toFixed(0)}/100</span> ·
+        Revised cost ${fmt.cr(x.revised_cost_cr)} ·
+        Forecast ${x.pred_cost_overrun_pct.toFixed(1)}% cost / ${x.pred_time_overrun_months.toFixed(1)} mo delay</div>
+      ${x.signals.map(s=>`<span class="signal">${esc(s)}</span>`).join('')}
+      <div class="rec"><b>Recommended action:</b> ${esc(x.recommended_action)}</div>
+    </div>`).join('') || '<div class="note">No alerts match the current filters.</div>';
+}
+</script>
+</body>
+</html>

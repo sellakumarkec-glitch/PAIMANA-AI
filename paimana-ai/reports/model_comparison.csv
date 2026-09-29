@@ -1,0 +1,17 @@
+model,MAE,RMSE,R2,target,featureset,fit_seconds,best_iter,accuracy,macro_f1,roc_auc_ovr
+OLS,8.132,11.26,0.401,cost_overrun_pct,cuf,,,,,
+RIDGE,8.13,11.258,0.4012,cost_overrun_pct,cuf,,,,,
+LightGBM,7.647,10.918,0.4368,cost_overrun_pct,cuf,2.41,130.0,,,
+OLS,6.033,9.708,0.6684,time_overrun_months,cuf,,,,,
+RIDGE,6.028,9.705,0.6686,time_overrun_months,cuf,,,,,
+LightGBM,3.359,7.57,0.7984,time_overrun_months,cuf,2.65,191.0,,,
+Multinomial Logit,,,,risk_class,cuf,,,0.62,0.639,
+LightGBM,,,,risk_class,cuf,,,0.6378,0.6594,0.8782
+OLS,7.763,11.024,0.4259,cost_overrun_pct,extended,,,,,
+RIDGE,7.762,11.022,0.426,cost_overrun_pct,extended,,,,,
+LightGBM,7.217,10.651,0.4641,cost_overrun_pct,extended,3.15,220.0,,,
+OLS,6.061,9.694,0.6694,time_overrun_months,extended,,,,,
+RIDGE,6.058,9.691,0.6696,time_overrun_months,extended,,,,,
+LightGBM,3.363,7.623,0.7955,time_overrun_months,extended,2.88,137.0,,,
+Multinomial Logit,,,,risk_class,extended,,,0.645,0.6628,
+LightGBM,,,,risk_class,extended,,,0.65,0.6715,0.8882

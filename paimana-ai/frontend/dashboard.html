@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Monitoring Dashboard | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">AI-powered Monitoring Dashboard</h2>
+    <p class="section-sub">Filter the live portfolio and see forecast cost escalation, schedule slippage and composite risk for every monitored project.</p>
+
+    <div class="panel" style="margin-bottom:24px">
+      <div class="panel-head"><span>Filters</span><span class="asof" id="hitCount"></span></div>
+      <div class="panel-body">
+        <div class="filters">
+          <div class="field"><label for="fMin">Ministry / Department</label><select id="fMin"></select></div>
+          <div class="field"><label for="fSec">Sector</label><select id="fSec"></select></div>
+          <div class="field"><label for="fSt">State</label><select id="fSt"></select></div>
+          <div class="field"><label for="fRisk">Risk band</label><select id="fRisk"></select></div>
+          <div class="field"><label for="fStatus">Status</label><select id="fStatus"></select></div>
+          <div class="field"><label for="fQ">Search project</label><input type="text" id="fQ" placeholder="name or ID"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="fkpis" style="margin-bottom:24px"></div>
+
+    <div class="chart-grid" style="margin-bottom:26px">
+      <div class="chart-box"><h3>Risk bands</h3><p class="hint">Filtered cohort</p><canvas id="c1"></canvas></div>
+      <div class="chart-box"><h3>Forecast delay vs forecast escalation</h3><p class="hint">Each point is a project; colour = risk band</p><canvas id="c2"></canvas></div>
+      <div class="chart-box"><h3>Implementation status mix</h3><p class="hint">As reported in the Common Upload Form</p><canvas id="c3"></canvas></div>
+      <div class="chart-box"><h3>Physical progress vs schedule elapsed</h3><p class="hint">Points below the line are behind schedule</p><canvas id="c4"></canvas></div>
+    </div>
+
+    <div class="panel" id="register">
+      <div class="panel-head"><span>Project Risk Register</span>
+        <span class="asof">Sorted by composite risk score · click a project for the full diagnosis</span></div>
+      <div class="panel-body">
+        <div class="tbl-scroll"><table class="data" id="tbl"></table></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px;flex-wrap:wrap">
+          <span id="pageInfo" style="font-size:13px;color:var(--muted)"></span>
+          <div style="display:flex;gap:8px">
+            <button class="btn-pill btn-navy" id="prev" style="padding:9px 20px">Previous</button>
+            <button class="btn-pill btn-navy" id="next" style="padding:9px 20px">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome('Dashboard'); chartDefaults();
+let PAGE = 1, SORT = 'risk_score', DESC = true, CHARTS = {}, ALL = [];
+
+(async function(){
+  const f = await api('/api/filters');
+  const fill = (id, arr, label) => {
+    document.getElementById(id).innerHTML = `<option value="">All ${label}</option>` +
+      arr.map(v=>`<option>${esc(v)}</option>`).join('');
+  };
+  fill('fMin', f.ministry, 'ministries'); fill('fSec', f.sector, 'sectors');
+  fill('fSt', f.state, 'states'); fill('fRisk', f.risk_band, 'bands');
+  fill('fStatus', f.project_status, 'statuses');
+  ['fMin','fSec','fSt','fRisk','fStatus'].forEach(id =>
+    document.getElementById(id).onchange = () => { PAGE = 1; load(); });
+  let t; document.getElementById('fQ').oninput = () => { clearTimeout(t); t = setTimeout(()=>{PAGE=1;load();},320); };
+  document.getElementById('prev').onclick = ()=>{ if(PAGE>1){PAGE--;load();} };
+  document.getElementById('next').onclick = ()=>{ PAGE++; load(); };
+  load();
+})();
+
+function qs(size){
+  const p = new URLSearchParams();
+  const m = {fMin:'ministry', fSec:'sector', fSt:'state', fRisk:'risk_band', fStatus:'status'};
+  for (const [id,k] of Object.entries(m)){ const v=document.getElementById(id).value; if(v) p.set(k,v); }
+  const q = document.getElementById('fQ').value.trim(); if(q) p.set('q',q);
+  p.set('sort',SORT); p.set('desc',DESC); p.set('size',size);
+  return p;
+}
+
+async function load(){
+  const page = await api('/api/projects?'+qs(25)+'&page='+PAGE);
+  const full = await api('/api/projects?'+qs(3000)+'&page=1');
+  ALL = full.rows;
+  document.getElementById('hitCount').textContent = `${fmt.n(full.total)} projects match`;
+  renderKpis(ALL);
+  renderTable(page);
+  renderCharts(ALL);
+}
+
+function renderKpis(rows){
+  const n = rows.length || 1;
+  const band = b => rows.filter(r=>r.risk_band===b).length;
+  const var_ = rows.filter(r=>['High','Critical'].includes(r.risk_band))
+                   .reduce((s,r)=>s+r.revised_cost_cr,0);
+  const cards = [
+    ['Projects in view', fmt.n(rows.length), ''],
+    ['Median forecast escalation', (median(rows.map(r=>r.pred_cost_overrun_pct))).toFixed(1)+'%', '', 'amber'],
+    ['Median forecast slippage', (median(rows.map(r=>r.pred_time_overrun_months))).toFixed(1), 'months', 'amber'],
+    ['High + Critical', fmt.n(band('High')+band('Critical')), `of ${fmt.n(rows.length)}`, 'red'],
+    ['Value at risk', (var_/1e5).toFixed(2), '₹ lakh cr', 'red'],
+    ['Mean risk score', (rows.reduce((s,r)=>s+r.risk_score,0)/n).toFixed(0), '/100'],
+  ];
+  document.getElementById('fkpis').innerHTML = cards.map(([l,v,u,c])=>
+    `<div class="kpi ${c||''}"><div class="k-label">${l}</div>
+      <div class="k-value" style="font-size:26px">${v}<span class="k-unit">${u||''}</span></div></div>`).join('');
+}
+const median = a => { if(!a.length) return 0; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1;
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+
+function renderTable(page){
+  const th = (k,l,cls='') => `<th class="${cls}" style="cursor:pointer" data-k="${k}">${l}${SORT===k?(DESC?' ▾':' ▴'):''}</th>`;
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr>${th('risk_rank','#','num')}${th('project_name','Project')}${th('ministry','Ministry')}
+      ${th('original_cost_cr','Sanctioned (₹ cr)','num')}${th('physical_progress_pct','Physical %','num')}
+      ${th('pred_cost_overrun_pct','Forecast cost ↑','num')}${th('pred_time_overrun_months','Forecast delay','num')}
+      ${th('alert_count','Alerts','num')}${th('risk_score','Risk','num')}</tr></thead>
+    <tbody>${page.rows.map(p=>`<tr>
+      <td class="num">${p.risk_rank}</td>
+      <td><a href="project.html?id=${p.project_id}">${esc(p.project_name)}</a>
+        <div style="font-size:11.5px;color:#7a8499">${p.project_id} · ${esc(p.sector)} · ${esc(p.state)}</div></td>
+      <td style="font-size:12.6px">${esc(p.ministry)}</td>
+      <td class="num">${fmt.n(p.original_cost_cr)}</td>
+      <td class="num">${p.physical_progress_pct}<div class="bar"><i style="width:${p.physical_progress_pct}%"></i></div></td>
+      <td class="num">${p.pred_cost_overrun_pct.toFixed(1)}%</td>
+      <td class="num">${p.pred_time_overrun_months.toFixed(1)} mo</td>
+      <td class="num">${p.alert_count}</td>
+      <td class="num"><span class="badge b-${p.risk_band}">${p.risk_score.toFixed(0)}</span></td></tr>`).join('')}
+    </tbody>`;
+  document.querySelectorAll('#tbl thead th').forEach(h=> h.onclick = ()=>{
+    const k=h.dataset.k; if(!k) return;
+    if(SORT===k) DESC=!DESC; else { SORT=k; DESC=true; }
+    PAGE=1; load();
+  });
+  document.getElementById('pageInfo').textContent =
+    `Page ${page.page} of ${page.pages || 1} · ${fmt.n(page.total)} projects`;
+  document.getElementById('prev').disabled = page.page<=1;
+  document.getElementById('next').disabled = page.page>=page.pages;
+}
+
+function renderCharts(rows){
+  Object.values(CHARTS).forEach(c=>c.destroy()); CHARTS={};
+  const bands = ['Low','Medium','High','Critical'];
+  CHARTS.c1 = new Chart(document.getElementById('c1'),{type:'doughnut',
+    data:{labels:bands,datasets:[{data:bands.map(b=>rows.filter(r=>r.risk_band===b).length),
+      backgroundColor:bands.map(b=>RISKCOLOR[b]),borderWidth:2,borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom'}},cutout:'56%'}});
+
+  CHARTS.c2 = new Chart(document.getElementById('c2'),{type:'scatter',
+    data:{datasets:bands.map(b=>({label:b,backgroundColor:RISKCOLOR[b],pointRadius:3,
+      data:rows.filter(r=>r.risk_band===b).map(r=>({x:r.pred_time_overrun_months,y:r.pred_cost_overrun_pct}))}))},
+    options:{plugins:{legend:{position:'bottom'}},
+      scales:{x:{title:{display:true,text:'Forecast slippage (months)'}},
+              y:{title:{display:true,text:'Forecast cost overrun (%)'}}}}});
+
+  const counts = {};
+  rows.forEach(r=>{ const k=r.project_status; counts[k]=(counts[k]||0)+1; });
+  CHARTS.c3 = new Chart(document.getElementById('c3'),{type:'bar',
+    data:{labels:Object.keys(counts),datasets:[{data:Object.values(counts),
+      backgroundColor:PALETTE,borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}}}});
+
+  CHARTS.c4 = new Chart(document.getElementById('c4'),{type:'scatter',
+    data:{datasets:[
+      {label:'Projects',backgroundColor:'rgba(19,58,158,.45)',pointRadius:2.6,
+       data:rows.map(r=>({x:r.elapsed_schedule_pct,y:r.physical_progress_pct}))},
+      {label:'On-track line',type:'line',borderColor:'#e9a63c',borderWidth:2,pointRadius:0,
+       data:[{x:0,y:0},{x:100,y:100}]}]},
+    options:{plugins:{legend:{position:'bottom'}},
+      scales:{x:{title:{display:true,text:'Schedule elapsed (%)'},min:0,max:100},
+              y:{title:{display:true,text:'Physical progress (%)'},min:0,max:100}}}});
+}
+</script>
+</body>
+</html>

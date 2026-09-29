@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What-if Prediction | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Add Project / Update — What-if Prediction</h2>
+    <p class="section-sub">Enter a Common Upload Form record. The trained models return forecast cost escalation, forecast slippage and a composite risk score before the project is committed to monitoring.</p>
+
+    <div id="offlineNote"></div>
+
+    <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:26px;align-items:start" class="chart-grid">
+      <div class="panel"><div class="panel-head">Common Upload Form fields</div>
+        <div class="panel-body">
+          <div class="filters" id="form"></div>
+          <details style="margin-top:20px"><summary style="cursor:pointer;font-weight:600;color:var(--navy)">External signals not in the CUF (optional)</summary>
+            <div class="filters" id="formExt" style="margin-top:14px"></div></details>
+          <button class="btn-pill btn-amber" id="go" style="margin-top:22px;width:100%">Run prediction</button>
+        </div></div>
+
+      <div class="panel"><div class="panel-head">Model output</div>
+        <div class="panel-body" id="out">
+          <div class="note">Fill the form and run a prediction. Defaults describe a mid-size EPC highway package at 55% of its sanctioned schedule.</div>
+        </div></div>
+    </div>
+  </div>
+</section>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome(''); chartDefaults();
+
+const NUM = [
+  ['original_cost_cr','Sanctioned cost (₹ cr)',1200],
+  ['original_duration_m','Sanctioned duration (months)',48],
+  ['physical_progress_pct','Physical progress (%)',40],
+  ['financial_progress_pct','Financial progress (%)',45],
+  ['elapsed_schedule_pct','Schedule elapsed (%)',55],
+  ['land_acquired_pct','Land acquired (%)',80],
+  ['award_lag_months','Award lag after sanction (months)',7],
+  ['num_cost_revisions','Cost revisions approved',0],
+  ['num_packages','Number of packages',3],
+];
+const EXT = [
+  ['ext_monsoon_stoppage_days','Monsoon stoppage days / year',45],
+  ['ext_steel_price_index','Steel price index at award',100],
+  ['ext_cement_price_index','Cement price index at award',100],
+  ['ext_litigation_cases','Land litigation cases',0],
+  ['ext_contractor_stress','Contractor financial stress (0–100)',30],
+  ['ext_row_availability_pct','Right-of-way available (%)',75],
+  ['ext_local_unrest_days','Local agitation days',2],
+];
+const CAT = [
+  ['ministry','Ministry / Department'],['sector','Sector'],['state','State'],
+  ['agency_type','Implementing agency type'],['funding_mode','Funding mode'],
+  ['contract_type','Contract type'],['forest_clearance','Forest clearance'],
+  ['env_clearance','Environment clearance'],['monitoring_frequency','Monitoring frequency'],
+];
+
+(async function(){
+  let f = null;
+  try { f = await api('/api/filters'); } catch(e) {}
+  const catHtml = CAT.map(([k,l])=>{
+    const opts = (f && f[k]) ? f[k] : [];
+    return `<div class="field"><label for="${k}">${l}</label>
+      <select id="${k}">${opts.map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>`;
+  }).join('');
+  document.getElementById('form').innerHTML = catHtml +
+    `<div class="field"><label for="date_of_sanction">Date of sanction</label>
+      <input type="text" id="date_of_sanction" value="2022-06-15"></div>` +
+    `<div class="field"><label for="reason_for_delay">Reported reason for delay</label>
+      <select id="reason_for_delay">${['None reported','Land acquisition problems','Forest / Environment clearance delay',
+        'Delay in tendering / award of work','Contractual issues with agency','Fund constraints',
+        'Law & order / local agitation','Shortage of construction material / labour','Geological surprises',
+        'Change in scope / design','Utility shifting & Right of Way','Statutory / regulatory approvals',
+        'Adverse weather / monsoon','Rehabilitation & resettlement issues']
+        .map(o=>`<option>${esc(o)}</option>`).join('')}</select></div>` +
+    NUM.map(([k,l,v])=>`<div class="field"><label for="${k}">${l}</label>
+      <input type="number" id="${k}" value="${v}" step="any"></div>`).join('');
+  document.getElementById('formExt').innerHTML = EXT.map(([k,l,v])=>
+    `<div class="field"><label for="${k}">${l}</label><input type="number" id="${k}" value="${v}" step="any"></div>`).join('');
+
+  if (OFFLINE) document.getElementById('offlineNote').innerHTML =
+    `<div class="note" style="margin-bottom:20px"><b>Static mode.</b> The FastAPI backend is not reachable, so predictions use the
+      transparent distilled surrogate in <code>js/offline.js</code> rather than the trained LightGBM models. Every other page on this
+      site is unaffected. For true model inference, run <code>uvicorn backend.app:app --port 8000</code> and open
+      <code>http://localhost:8000</code>.</div>`;
+
+  document.getElementById('go').onclick = run;
+})();
+
+async function run(){
+  const body = {};
+  CAT.forEach(([k])=> body[k] = document.getElementById(k).value);
+  body.date_of_sanction = document.getElementById('date_of_sanction').value;
+  body.reason_for_delay = document.getElementById('reason_for_delay').value;
+  [...NUM, ...EXT].forEach(([k])=> body[k] = parseFloat(document.getElementById(k).value));
+
+  document.getElementById('out').innerHTML = '<span class="spinner"></span> Running models…';
+  const r = await api('/api/predict', {method:'POST', headers:{'Content-Type':'application/json'},
+                                       body: JSON.stringify(body)});
+  document.getElementById('out').innerHTML = `
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi ${r.pred_cost_overrun_pct>20?'red':'amber'}"><div class="k-label">Forecast cost overrun</div>
+        <div class="k-value">${r.pred_cost_overrun_pct.toFixed(1)}<span class="k-unit">%</span></div>
+        <div class="k-note">≈ ${fmt.cr(r.projected_escalation_cr)} escalation</div></div>
+      <div class="kpi ${r.pred_time_overrun_months>12?'red':'amber'}"><div class="k-label">Forecast slippage</div>
+        <div class="k-value">${r.pred_time_overrun_months.toFixed(1)}<span class="k-unit">mo</span></div></div>
+      <div class="kpi" style="border-top-color:${RISKCOLOR[r.risk_band]}"><div class="k-label">Composite risk</div>
+        <div class="k-value">${r.risk_score}<span class="k-unit">/100</span></div>
+        <div class="k-note"><span class="badge b-${r.risk_band}">${r.risk_band}</span></div></div>
+      <div class="kpi"><div class="k-label">Projected final cost</div>
+        <div class="k-value" style="font-size:24px">${fmt.n(r.projected_revised_cost_cr)}<span class="k-unit">₹ cr</span></div></div>
+    </div>
+    <canvas id="cProb" style="max-height:230px"></canvas>
+    <p style="font-size:12.6px;color:var(--muted);margin-top:14px">
+      Risk class probabilities from the multiclass LightGBM classifier. Predictions are point estimates on a
+      held-out test MAE of ±7.1 percentage points (cost) and ±3.1 months (schedule) — treat them as a
+      prioritisation signal, not a contractual forecast.</p>`;
+
+  new Chart(document.getElementById('cProb'),{type:'bar',
+    data:{labels:Object.keys(r.risk_probabilities),
+      datasets:[{data:Object.values(r.risk_probabilities).map(v=>+(v*100).toFixed(1)),
+        backgroundColor:Object.keys(r.risk_probabilities).map(k=>RISKCOLOR[k]),borderRadius:4}]},
+    options:{plugins:{legend:{display:false},title:{display:true,text:'Risk class probability (%)'}},
+      scales:{y:{max:100}}}});
+}
+</script>
+<script src="js/offline.js"></script>
+</body>
+</html>

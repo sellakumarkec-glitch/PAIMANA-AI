@@ -1,0 +1,310 @@
+{
+  "cost_overrun_pct|cuf": [
+    {
+      "feature": "reason_for_delay",
+      "gain": 13358.73746585846,
+      "gain_pct": 17.29
+    },
+    {
+      "feature": "schedule_burn_ratio",
+      "gain": 9392.155352592468,
+      "gain_pct": 12.16
+    },
+    {
+      "feature": "state",
+      "gain": 8422.879804134369,
+      "gain_pct": 10.9
+    },
+    {
+      "feature": "num_cost_revisions",
+      "gain": 5701.0316524505615,
+      "gain_pct": 7.38
+    },
+    {
+      "feature": "spend_efficiency",
+      "gain": 3959.004858016968,
+      "gain_pct": 5.12
+    },
+    {
+      "feature": "progress_gap",
+      "gain": 3826.7438492774963,
+      "gain_pct": 4.95
+    },
+    {
+      "feature": "sector",
+      "gain": 3425.2555317878723,
+      "gain_pct": 4.43
+    },
+    {
+      "feature": "original_duration_m",
+      "gain": 3242.4198207855225,
+      "gain_pct": 4.2
+    },
+    {
+      "feature": "land_acquired_pct",
+      "gain": 2973.9760723114014,
+      "gain_pct": 3.85
+    },
+    {
+      "feature": "physical_progress_pct",
+      "gain": 2837.7746152877808,
+      "gain_pct": 3.67
+    },
+    {
+      "feature": "elapsed_schedule_pct",
+      "gain": 2792.48867559433,
+      "gain_pct": 3.61
+    },
+    {
+      "feature": "award_lag_months",
+      "gain": 2660.715343952179,
+      "gain_pct": 3.44
+    },
+    {
+      "feature": "original_cost_cr",
+      "gain": 2565.9987864494324,
+      "gain_pct": 3.32
+    },
+    {
+      "feature": "sanction_age_months",
+      "gain": 2333.3263823986053,
+      "gain_pct": 3.02
+    },
+    {
+      "feature": "cost_per_month",
+      "gain": 2201.53741645813,
+      "gain_pct": 2.85
+    }
+  ],
+  "time_overrun_months|cuf": [
+    {
+      "feature": "reason_for_delay",
+      "gain": 73356.79691123962,
+      "gain_pct": 44.29
+    },
+    {
+      "feature": "schedule_burn_ratio",
+      "gain": 27333.60859966278,
+      "gain_pct": 16.5
+    },
+    {
+      "feature": "original_duration_m",
+      "gain": 7521.464960694313,
+      "gain_pct": 4.54
+    },
+    {
+      "feature": "state",
+      "gain": 5868.763756036758,
+      "gain_pct": 3.54
+    },
+    {
+      "feature": "land_acquired_pct",
+      "gain": 5521.518961071968,
+      "gain_pct": 3.33
+    },
+    {
+      "feature": "progress_gap",
+      "gain": 4925.286655902863,
+      "gain_pct": 2.97
+    },
+    {
+      "feature": "spend_efficiency",
+      "gain": 4890.447381019592,
+      "gain_pct": 2.95
+    },
+    {
+      "feature": "physical_progress_pct",
+      "gain": 3988.3408007621765,
+      "gain_pct": 2.41
+    },
+    {
+      "feature": "award_lag_months",
+      "gain": 3758.780140399933,
+      "gain_pct": 2.27
+    },
+    {
+      "feature": "sector",
+      "gain": 3738.7829892635345,
+      "gain_pct": 2.26
+    },
+    {
+      "feature": "sanction_age_months",
+      "gain": 3718.211368918419,
+      "gain_pct": 2.24
+    },
+    {
+      "feature": "elapsed_schedule_pct",
+      "gain": 3694.8464803397655,
+      "gain_pct": 2.23
+    },
+    {
+      "feature": "original_cost_cr",
+      "gain": 3634.026049375534,
+      "gain_pct": 2.19
+    },
+    {
+      "feature": "financial_progress_pct",
+      "gain": 3097.6785925626755,
+      "gain_pct": 1.87
+    },
+    {
+      "feature": "cost_per_month",
+      "gain": 3056.062473297119,
+      "gain_pct": 1.85
+    }
+  ],
+  "cost_overrun_pct|extended": [
+    {
+      "feature": "reason_for_delay",
+      "gain": 13549.96534872055,
+      "gain_pct": 10.93
+    },
+    {
+      "feature": "state",
+      "gain": 11674.29604434967,
+      "gain_pct": 9.42
+    },
+    {
+      "feature": "schedule_burn_ratio",
+      "gain": 11068.330546855927,
+      "gain_pct": 8.93
+    },
+    {
+      "feature": "ext_steel_price_index",
+      "gain": 10135.106823921204,
+      "gain_pct": 8.18
+    },
+    {
+      "feature": "num_cost_revisions",
+      "gain": 6600.805799245834,
+      "gain_pct": 5.33
+    },
+    {
+      "feature": "ext_monsoon_stoppage_days",
+      "gain": 6449.379228115082,
+      "gain_pct": 5.2
+    },
+    {
+      "feature": "ext_contractor_stress",
+      "gain": 5097.285346031189,
+      "gain_pct": 4.11
+    },
+    {
+      "feature": "ext_cement_price_index",
+      "gain": 4988.611600637436,
+      "gain_pct": 4.02
+    },
+    {
+      "feature": "sector",
+      "gain": 4929.644604206085,
+      "gain_pct": 3.98
+    },
+    {
+      "feature": "spend_efficiency",
+      "gain": 4906.588462352753,
+      "gain_pct": 3.96
+    },
+    {
+      "feature": "original_duration_m",
+      "gain": 4124.448585510254,
+      "gain_pct": 3.33
+    },
+    {
+      "feature": "progress_gap",
+      "gain": 3927.047025680542,
+      "gain_pct": 3.17
+    },
+    {
+      "feature": "award_lag_months",
+      "gain": 3782.5445396900177,
+      "gain_pct": 3.05
+    },
+    {
+      "feature": "elapsed_schedule_pct",
+      "gain": 3412.796553850174,
+      "gain_pct": 2.75
+    },
+    {
+      "feature": "sanction_age_months",
+      "gain": 3359.8604674339294,
+      "gain_pct": 2.71
+    }
+  ],
+  "time_overrun_months|extended": [
+    {
+      "feature": "reason_for_delay",
+      "gain": 75571.58940458298,
+      "gain_pct": 50.3
+    },
+    {
+      "feature": "schedule_burn_ratio",
+      "gain": 24160.431081533432,
+      "gain_pct": 16.08
+    },
+    {
+      "feature": "original_duration_m",
+      "gain": 5811.284015893936,
+      "gain_pct": 3.87
+    },
+    {
+      "feature": "state",
+      "gain": 4274.7952880859375,
+      "gain_pct": 2.85
+    },
+    {
+      "feature": "progress_gap",
+      "gain": 3120.093484044075,
+      "gain_pct": 2.08
+    },
+    {
+      "feature": "spend_efficiency",
+      "gain": 2649.3563401699066,
+      "gain_pct": 1.76
+    },
+    {
+      "feature": "ext_row_availability_pct",
+      "gain": 2573.304547071457,
+      "gain_pct": 1.71
+    },
+    {
+      "feature": "ext_cement_price_index",
+      "gain": 2353.5870168209076,
+      "gain_pct": 1.57
+    },
+    {
+      "feature": "elapsed_schedule_pct",
+      "gain": 2324.2382065951824,
+      "gain_pct": 1.55
+    },
+    {
+      "feature": "sector",
+      "gain": 2299.5918378829956,
+      "gain_pct": 1.53
+    },
+    {
+      "feature": "original_cost_cr",
+      "gain": 2248.4512372016907,
+      "gain_pct": 1.5
+    },
+    {
+      "feature": "physical_progress_pct",
+      "gain": 2248.159940958023,
+      "gain_pct": 1.5
+    },
+    {
+      "feature": "ext_steel_price_index",
+      "gain": 2147.209750175476,
+      "gain_pct": 1.43
+    },
+    {
+      "feature": "sanction_age_months",
+      "gain": 2079.648049354553,
+      "gain_pct": 1.38
+    },
+    {
+      "feature": "ext_contractor_stress",
+      "gain": 2034.084240436554,
+      "gain_pct": 1.35
+    }
+  ]
+}

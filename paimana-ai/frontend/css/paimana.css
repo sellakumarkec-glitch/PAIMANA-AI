@@ -1,0 +1,270 @@
+/* ==========================================================================
+   PAIMANA-AI :: design system
+   Mirrors the visual language of paimana-proj.mospi.gov.in
+   (GoI deep-navy + saffron-amber + sky-blue navigation band)
+   ========================================================================== */
+
+:root{
+  --navy-strip:#152163;
+  --navy:#12296e;
+  --navy-deep:#0f1b4d;
+  --navy-btn:#133a9e;
+  --navy-btn-h:#0f2f80;
+  --amber:#e9a63c;
+  --amber-h:#d8912a;
+  --navbar:#5da2dc;
+  --navbar-h:#4a90cc;
+  --ink:#1c2333;
+  --muted:#5d6880;
+  --line:#dfe5ef;
+  --bg:#ffffff;
+  --bg-soft:#f4f7fb;
+  --bg-soft2:#eef3f9;
+
+  --low:#1f9d55;
+  --medium:#e9a63c;
+  --high:#e2703a;
+  --critical:#c62828;
+
+  --shadow-sm:0 1px 3px rgba(17,30,70,.08);
+  --shadow:0 4px 18px rgba(17,30,70,.10);
+  --shadow-lg:0 10px 34px rgba(17,30,70,.16);
+  --radius:10px;
+  --maxw:1440px;
+  --font:'Poppins','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--navy-btn);text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+
+/* ---------- 1. Utility strip ------------------------------------------ */
+.utility{background:var(--navy-strip);color:#fff;height:44px;display:flex;align-items:center}
+.utility .wrap{display:flex;justify-content:space-between;align-items:center;width:100%}
+.utility .u-left{font-size:12.5px;letter-spacing:.3px;opacity:.9}
+.utility .u-right{display:flex;gap:22px;align-items:center}
+.utility button{
+  background:none;border:0;color:#fff;cursor:pointer;font-size:14px;font-family:var(--font);
+  display:flex;align-items:center;gap:6px;padding:4px 2px;opacity:.92
+}
+.utility button:hover{opacity:1}
+
+/* ---------- 2. Masthead ----------------------------------------------- */
+.masthead{background:#fff;border-bottom:1px solid var(--line)}
+.masthead .wrap{display:flex;align-items:center;gap:26px;padding-top:14px;padding-bottom:14px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.brand .emblem{width:46px;height:64px;flex:0 0 auto}
+.brand .dfd{width:56px;height:56px;flex:0 0 auto}
+.brand-text{line-height:1.22;min-width:0}
+.brand-text .l1{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:-.1px}
+.brand-text .l2{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:-.1px}
+.brand-text .l3{font-size:13.5px;color:#5a6379;font-weight:400}
+
+.mast-actions{margin-left:auto;display:flex;gap:16px;align-items:center}
+.btn-pill{
+  border:0;border-radius:40px;padding:14px 30px;font-weight:600;font-size:14.5px;
+  letter-spacing:.7px;text-transform:uppercase;cursor:pointer;font-family:var(--font);
+  color:#fff;transition:background .18s,transform .18s,box-shadow .18s;white-space:nowrap;
+}
+.btn-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow);text-decoration:none}
+.btn-amber{background:var(--amber)}
+.btn-amber:hover{background:var(--amber-h)}
+.btn-navy{background:var(--navy-btn)}
+.btn-navy:hover{background:var(--navy-btn-h)}
+.paimana-logo{height:66px;flex:0 0 auto}
+
+/* ---------- 3. Navigation band ---------------------------------------- */
+.navband{background:var(--navbar)}
+.navband .wrap{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
+.navband a.nav-item,.navband .nav-item>button{
+  color:#fff;font-weight:600;font-size:16.5px;padding:17px 26px;display:inline-flex;
+  align-items:center;gap:7px;background:none;border:0;cursor:pointer;font-family:var(--font);
+  transition:background .16s;
+}
+.navband a.nav-item:hover,.navband .nav-item>button:hover{background:var(--navbar-h);text-decoration:none}
+.navband a.nav-item.active,.navband .nav-item.active>button{background:rgba(255,255,255,.22)}
+.nav-item{position:relative}
+.caret{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:6px solid #fff;margin-top:2px}
+.dropdown{
+  position:absolute;top:100%;left:0;min-width:266px;background:#fff;border-radius:0 0 8px 8px;
+  box-shadow:var(--shadow-lg);padding:8px 0;display:none;z-index:70;border-top:3px solid var(--amber);
+}
+.nav-item:hover .dropdown,.nav-item:focus-within .dropdown{display:block}
+.dropdown a{display:block;padding:11px 20px;color:var(--ink);font-size:14.5px;font-weight:500}
+.dropdown a:hover{background:var(--bg-soft2);color:var(--navy-btn);text-decoration:none}
+
+/* ---------- 4. Hero carousel ------------------------------------------ */
+.hero{position:relative;height:clamp(360px,52vw,620px);overflow:hidden;background:var(--navy-deep)}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;display:grid;place-items:center}
+.slide.on{opacity:1}
+.slide svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.slide-caption{
+  position:relative;z-index:3;background:rgba(18,28,64,.42);backdrop-filter:blur(2px);
+  padding:38px clamp(28px,6vw,90px);text-align:center;max-width:min(1180px,88%);border-radius:4px;
+}
+.slide-caption h2{
+  margin:0;color:#dbe8f7;font-size:clamp(30px,5.6vw,74px);font-weight:600;letter-spacing:clamp(4px,1.1vw,15px);
+  -webkit-text-stroke:1.4px rgba(255,255,255,.95);text-shadow:0 3px 16px rgba(0,0,0,.4);line-height:1.12;
+}
+.slide-caption p{margin:16px 0 0;color:#fff;font-size:clamp(14px,1.7vw,25px);font-weight:300}
+.hero-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:66px;height:66px;border-radius:50%;
+  background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.75);color:#fff;font-size:27px;
+  cursor:pointer;display:grid;place-items:center;transition:background .18s
+}
+.hero-arrow:hover{background:rgba(255,255,255,.3)}
+.hero-arrow.prev{left:26px}
+.hero-arrow.next{right:26px}
+.hero-dots{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:11px;z-index:5}
+.hero-dots span{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.55);cursor:pointer;transition:background .2s}
+.hero-dots span.on{background:#2f7fd4;box-shadow:0 0 0 2px rgba(255,255,255,.8)}
+
+/* ---------- 5. Generic section / cards -------------------------------- */
+.section{padding:46px 0}
+.section.soft{background:var(--bg-soft)}
+.section-title{
+  text-align:center;font-size:27px;font-weight:700;color:var(--navy);margin:0 0 6px;letter-spacing:-.2px
+}
+.section-sub{text-align:center;color:var(--muted);margin:0 auto 30px;max-width:780px;font-size:14.5px}
+
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden}
+.panel-head{background:var(--navy-deep);color:#fff;padding:15px 22px;font-weight:600;font-size:18px;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.panel-head .asof{font-weight:400;font-size:14px;opacity:.85}
+.panel-body{padding:22px}
+
+/* KPI tiles */
+.kpi-grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.kpi{background:#fff;border:1px solid var(--line);border-top:4px solid var(--navy-btn);border-radius:var(--radius);
+  padding:20px;box-shadow:var(--shadow-sm)}
+.kpi .k-label{font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.3px}
+.kpi .k-value{font-size:31px;font-weight:700;color:var(--navy);line-height:1.15;margin-top:6px}
+.kpi .k-unit{font-size:15px;font-weight:600;color:var(--muted);margin-left:4px}
+.kpi .k-note{font-size:12.5px;color:var(--muted);margin-top:5px}
+.kpi.amber{border-top-color:var(--amber)}
+.kpi.red{border-top-color:var(--critical)}
+.kpi.green{border-top-color:var(--low)}
+
+/* Tabs */
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fff}
+.tabs button{
+  border:0;background:#fff;padding:14px 38px;font-size:16px;font-weight:600;color:var(--muted);
+  cursor:pointer;font-family:var(--font);transition:background .16s,color .16s
+}
+.tabs button.on{background:var(--amber);color:#fff}
+.tabs button:not(.on):hover{background:var(--bg-soft2);color:var(--navy)}
+
+/* Sidebar rail (MoM / DPIIT style) */
+.rail{display:flex;flex-direction:column;gap:12px}
+.rail button{
+  border:1px solid var(--line);background:#fff;border-radius:40px;padding:14px 22px;text-align:left;
+  font-weight:600;font-size:15px;color:var(--navy);cursor:pointer;font-family:var(--font);
+  display:flex;justify-content:space-between;align-items:center;gap:10px;transition:all .16s
+}
+.rail button:hover{border-color:var(--amber);color:var(--amber-h)}
+.rail button.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+.rail button.on .chev{color:#fff}
+.chev{color:var(--amber);font-weight:700}
+
+/* Tables */
+.tbl-scroll{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-size:13.6px;min-width:820px}
+table.data thead th{
+  background:var(--navy-deep);color:#fff;text-align:left;padding:12px 13px;font-weight:600;
+  position:sticky;top:0;white-space:nowrap;font-size:13px
+}
+table.data tbody td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+table.data tbody tr:nth-child(even){background:#fafcfe}
+table.data tbody tr:hover{background:#eff5fc}
+table.data td.num,table.data th.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* Badges & bars */
+.badge{display:inline-block;padding:3px 11px;border-radius:30px;font-size:11.8px;font-weight:600;color:#fff;white-space:nowrap}
+.b-Low{background:var(--low)} .b-Medium{background:var(--medium)}
+.b-High{background:var(--high)} .b-Critical{background:var(--critical)}
+.bar{height:7px;border-radius:5px;background:#e6ecf5;overflow:hidden;min-width:78px}
+.bar>i{display:block;height:100%;border-radius:5px;background:var(--navy-btn)}
+
+/* Forms */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12.5px;font-weight:600;color:var(--muted)}
+select,input[type=text],input[type=number],textarea{
+  font-family:var(--font);font-size:14px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:6px;background:#fff;color:var(--ink);width:100%
+}
+select:focus,input:focus,textarea:focus{border-color:var(--navy-btn);outline:none;box-shadow:0 0 0 3px rgba(19,58,158,.12)}
+.filters{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end}
+
+/* Alerts */
+.alert-card{border:1px solid var(--line);border-left:6px solid var(--medium);border-radius:8px;
+  padding:16px 18px;background:#fff;box-shadow:var(--shadow-sm);margin-bottom:14px}
+.alert-card.High{border-left-color:var(--high)}
+.alert-card.Critical{border-left-color:var(--critical)}
+.alert-card.Low{border-left-color:var(--low)}
+.alert-card h4{margin:0 0 4px;font-size:15.5px;color:var(--navy)}
+.alert-meta{font-size:12.5px;color:var(--muted);margin-bottom:10px}
+.signal{display:block;font-size:13.4px;padding:4px 0 4px 18px;position:relative}
+.signal:before{content:"▸";position:absolute;left:0;color:var(--high)}
+.rec{margin-top:11px;background:var(--bg-soft);border-radius:6px;padding:11px 13px;font-size:13.4px}
+.rec b{color:var(--navy)}
+
+/* Chart holders */
+.chart-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+.chart-box{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-sm)}
+.chart-box h3{margin:0 0 4px;font-size:15.5px;color:var(--navy)}
+.chart-box p.hint{margin:0 0 14px;font-size:12.5px;color:var(--muted)}
+.chart-box canvas{max-height:300px}
+
+/* Assistant */
+.chat{display:flex;flex-direction:column;gap:14px;max-height:520px;overflow-y:auto;padding:6px 2px}
+.msg{max-width:88%;padding:13px 17px;border-radius:12px;font-size:14.2px;line-height:1.62}
+.msg.user{align-self:flex-end;background:var(--navy-btn);color:#fff;border-bottom-right-radius:3px}
+.msg.bot{align-self:flex-start;background:var(--bg-soft);border:1px solid var(--line);border-bottom-left-radius:3px}
+.chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.chips button{background:#fff;border:1px solid var(--line);border-radius:30px;padding:8px 15px;
+  font-size:13px;cursor:pointer;font-family:var(--font);color:var(--navy);transition:all .16s}
+.chips button:hover{border-color:var(--navy-btn);background:var(--bg-soft2)}
+
+/* Footer */
+footer.site{background:var(--navy-deep);color:#c9d4ea;padding:38px 0 22px;margin-top:40px;font-size:13.6px}
+footer.site .cols{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+footer.site h5{color:#fff;font-size:14.5px;margin:0 0 11px}
+footer.site a{color:#c9d4ea;display:block;padding:3px 0}
+footer.site a:hover{color:#fff}
+footer.site .legal{border-top:1px solid rgba(255,255,255,.14);margin-top:26px;padding-top:16px;
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.4px;opacity:.85}
+
+.note{background:#fff8e8;border:1px solid #f0d9a5;border-left:5px solid var(--amber);
+  border-radius:7px;padding:14px 17px;font-size:13.5px;color:#6a5417}
+.spinner{display:inline-block;width:17px;height:17px;border:2.5px solid var(--line);
+  border-top-color:var(--navy-btn);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:1080px){
+  .masthead .wrap{flex-wrap:wrap}
+  .mast-actions{width:100%;justify-content:flex-start}
+  .paimana-logo{height:54px}
+}
+@media (max-width:720px){
+  .wrap{padding:0 16px}
+  .navband .wrap{justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap}
+  .navband a.nav-item,.navband .nav-item>button{padding:14px 16px;font-size:14.5px;white-space:nowrap}
+  .btn-pill{padding:11px 20px;font-size:12.5px}
+  .brand-text .l1,.brand-text .l2{font-size:14.5px}
+  .hero-arrow{width:44px;height:44px;font-size:20px}
+  .kpi .k-value{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .slide{transition:none}
+}

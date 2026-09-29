@@ -1,0 +1,4 @@
+target,cuf_MAE,extended_MAE,cuf_R2,extended_R2,MAE_reduction_pct,R2_gain
+cost_overrun_pct,7.647,7.217,0.4368,0.4641,5.62,0.0273
+time_overrun_months,3.359,3.363,0.7984,0.7955,-0.12,-0.0029
+risk_class,,,0.6594,0.6715,,0.0121

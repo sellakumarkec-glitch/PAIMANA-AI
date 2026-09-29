@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Benchmarking &amp; Comparative Analytics | PAIMANA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/paimana.css">
+</head>
+<body>
+
+<section class="section">
+  <div class="wrap">
+    <h2 class="section-title">Benchmarking &amp; Comparative Analytics</h2>
+    <p class="section-sub">Compare ministries, sectors and states against the national portfolio on forecast escalation, forecast slippage, tail risk and value at risk.</p>
+
+    <div style="display:flex;justify-content:center;margin-bottom:26px"><div class="tabs" id="tabs">
+      <button class="on" data-d="sector">By Sector</button>
+      <button data-d="ministry">By Ministry</button>
+      <button data-d="state">By State</button>
+    </div></div>
+
+    <div class="kpi-grid" id="nat" style="margin-bottom:24px"></div>
+
+    <div class="chart-grid" style="margin-bottom:26px">
+      <div class="chart-box"><h3>Median forecast cost overrun</h3><p class="hint">Dashed line = national median</p><canvas id="c1"></canvas></div>
+      <div class="chart-box"><h3>Median forecast slippage</h3><p class="hint">Months beyond sanctioned completion</p><canvas id="c2"></canvas></div>
+      <div class="chart-box"><h3>Value at risk</h3><p class="hint">Revised cost held in High/Critical projects (₹ lakh cr)</p><canvas id="c3"></canvas></div>
+      <div class="chart-box"><h3>Tail risk (P90 cost overrun)</h3><p class="hint">The worst-decile escalation each cohort must plan for</p><canvas id="c4"></canvas></div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span id="tTitle">Cohort comparison</span>
+      <span class="asof">Ranked by median composite risk</span></div>
+      <div class="panel-body"><div class="tbl-scroll"><table class="data" id="tbl"></table></div></div></div>
+  </div>
+</section>
+
+<script src="vendor/chart.umd.js"></script>
+<script src="js/common.js?v=20260924-8"></script>
+<script>
+chrome('Dashboard'); chartDefaults();
+let CH = {};
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  load(b.dataset.d);
+});
+load('sector');
+
+async function load(dim){
+  const d = await api('/api/benchmark?dimension='+dim);
+  const rows = d.rows;
+  document.getElementById('tTitle').textContent =
+    `Cohort comparison — by ${dim}`;
+
+  document.getElementById('nat').innerHTML = [
+    ['National median forecast cost overrun', d.national.median_cost_overrun+'%','','amber'],
+    ['National median forecast slippage', d.national.median_time_overrun,'months','amber'],
+    ['National median risk score', d.national.median_risk,'/100',''],
+    ['Cohorts compared', rows.length,'',''],
+  ].map(([l,v,u,c])=>`<div class="kpi ${c}"><div class="k-label">${l}</div>
+    <div class="k-value" style="font-size:25px">${v}<span class="k-unit">${u}</span></div></div>`).join('');
+
+  const top = rows.slice(0,12);
+  const lab = top.map(r=>r[dim]);
+  Object.values(CH).forEach(c=>c.destroy()); CH={};
+
+  const line = v => ({type:'line',data:top.map(()=>v),borderColor:'#c62828',borderDash:[6,5],
+                      borderWidth:2,pointRadius:0,label:'National median'});
+
+  CH.c1 = new Chart(document.getElementById('c1'),{type:'bar',
+    data:{labels:lab,datasets:[{label:'Median forecast overrun (%)',data:top.map(r=>r.median_cost_overrun),
+      backgroundColor:'#133a9e',borderRadius:4}, line(d.national.median_cost_overrun)]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{x:{ticks:{maxRotation:60,minRotation:35,font:{size:10}}}}}});
+
+  CH.c2 = new Chart(document.getElementById('c2'),{type:'bar',
+    data:{labels:lab,datasets:[{label:'Median slippage (months)',data:top.map(r=>r.median_time_overrun),
+      backgroundColor:'#e9a63c',borderRadius:4}, line(d.national.median_time_overrun)]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{x:{ticks:{maxRotation:60,minRotation:35,font:{size:10}}}}}});
+
+  CH.c3 = new Chart(document.getElementById('c3'),{type:'bar',
+    data:{labels:lab,datasets:[{label:'₹ lakh crore',data:top.map(r=>+(r.value_at_risk_cr/1e5).toFixed(2)),
+      backgroundColor:'#c62828',borderRadius:4}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:60,minRotation:35,font:{size:10}}}}}});
+
+  CH.c4 = new Chart(document.getElementById('c4'),{type:'bar',
+    data:{labels:lab,datasets:[
+      {label:'P90 cost overrun (%)',data:top.map(r=>r.p90_cost_overrun),backgroundColor:'#e2703a',borderRadius:4},
+      {label:'Median cost overrun (%)',data:top.map(r=>r.median_cost_overrun),backgroundColor:'#2f7fd4',borderRadius:4}]},
+    options:{plugins:{legend:{position:'bottom'}},scales:{x:{ticks:{maxRotation:60,minRotation:35,font:{size:10}}}}}});
+
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>${dim[0].toUpperCase()+dim.slice(1)}</th><th class="num">Projects</th>
+      <th class="num">Median cost ↑ (%)</th><th class="num">P90 cost ↑ (%)</th>
+      <th class="num">Median slippage (mo)</th><th class="num">Median risk</th>
+      <th class="num">Value at risk (₹ cr)</th><th>vs national</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const delta = (r.median_cost_overrun - d.national.median_cost_overrun).toFixed(1);
+      const worse = +delta > 0;
+      return `<tr><td>${esc(r[dim])}</td><td class="num">${fmt.n(r.projects)}</td>
+        <td class="num">${r.median_cost_overrun}</td><td class="num">${r.p90_cost_overrun}</td>
+        <td class="num">${r.median_time_overrun}</td><td class="num">${r.median_risk}</td>
+        <td class="num">${fmt.n(r.value_at_risk_cr)}</td>
+        <td style="color:${worse?'#c62828':'#1f9d55'};font-weight:600">${worse?'+':''}${delta} pp</td></tr>`;
+    }).join('')}</tbody>`;
+}
+</script>
+</body>
+</html>
